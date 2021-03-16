@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux_Kernel",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include",
+                "/usr/local/include",
+                "/usr/src/linux-headers-5.4.0-67/include",
+                "/usr/src/linux-headers-5.4.0-67/arch/x86/include",
+                "/usr/src/linux-headers-5.4.0-67-generic/arch/x86/include",
+                //"/usr/lib/gcc/x86_64-linux-gnu/9/include/",
+                "/usr/src/linux-headers-5.4.0-67-generic/include/"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
