@@ -83,8 +83,6 @@ int string_buffer_pop_front(struct string_buffer* sb) {
     }
 }
 
-
-
 size_t string_buffer_actual_length(struct string_buffer* sb) {
     return sb->capacity != 0 ? sb->capacity - sb->r_cursor - sb->f_cursor : 0;
 }
@@ -95,10 +93,10 @@ typedef int (*copy_to_buffer_callback_t)(char *to, const char *from, size_t coun
 //TODO how to return error ?
 size_t move_string_to_buffer(struct string_buffer* from, 
                              char* to, size_t count, 
-                             copy_to_buffer_callback_t callback, void* context)
+                             copy_to_buffer_callback_t copy_callback, void* context)
 {
     size_t actual_length = string_buffer_actual_length(from);
-    if (actual_length == 0) {
+    if (actual_length == 0 || count == 0) {
         return 0;
     }
 
@@ -110,20 +108,20 @@ size_t move_string_to_buffer(struct string_buffer* from,
 
     //todo while
 
-    size_t rest_of_substring = from->r_cursor > STRING_ENTRY_LEN ? STRING_ENTRY_LEN : from->r_cursor;
-    rest_of_substring -= from->f_cursor;
+    size_t rest_of_substring = STRING_ENTRY_LEN - from->f_cursor;
     if (rest_of_substring > count) {
         rest_of_substring = count;
     }
 
-    char* current_from_ptr = from->head->payload + from->f_cursor;
+    char* current_payload_ptr = from->head->payload + from->f_cursor;
     
-    if(callback(to, current_from_ptr, rest_of_substring, context)) {
+    if(copy_callback(to, current_payload_ptr, rest_of_substring, context)) {
         goto fail_;    
     }
     to += rest_of_substring;
     result += rest_of_substring;
     count -= rest_of_substring;
+    from->f_cursor += rest_of_substring;
 
     if (from->f_cursor + 1 >= STRING_ENTRY_LEN && !string_buffer_pop_front(from)) { // substring
         goto fail_;
