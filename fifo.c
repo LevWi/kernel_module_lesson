@@ -4,6 +4,8 @@
 #include <linux/kernel.h>
 #include <linux/fs.h>    
 
+#include "list.h"
+
 #define  DEVICE_NAME "fifo"   
 #define  CLASS_NAME  "fif"    
 

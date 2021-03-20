@@ -6,24 +6,28 @@
 
 const size_t STRING_ENTRY_LEN = 512
 
-struct list_entry {
+struct substring {
     char payload[STRING_ENTRY_LEN];
-    struct list_entry * next;
+    struct substring * next;
 };
 
 
 struct string_buffer {
-    struct list_entry * head;
-    struct list_entry * tail;
+    struct substring * head;
+    struct substring * tail;
     size_t length;
     size_t cur_position;
+
+    void* allocator;
+    struct substring* (*substring_new)(void* allocator);
+    void (*substring_free)(void* allocator, struct substring* ss) {
 }
 
 
-void list_entry_init(struct list_entry* le)
+void substring_init(struct substring* ss)
 {
-    le->payload[0] = '\0';
-    le->next = NULL;
+    ss->payload[0] = '\0';
+    ss->next = NULL;
 };
 
 void string_buffer_init(struct string_buffer* sl) {
@@ -34,6 +38,9 @@ void string_buffer_init(struct string_buffer* sl) {
     sl->cur_position = 0;
 }
 
+int string_buffer_push_back(struct string_buffer* sl, struct substring* ss) {
+
+}
 /*
 TODO
 
@@ -43,8 +50,8 @@ pop_front()
 trim_front(len)
 append_string(const char*, len)
 
-list_entry_new()
-list_entry_free()
+substring_new()
+substring_free()
 
 string_buffer_deinit
 
