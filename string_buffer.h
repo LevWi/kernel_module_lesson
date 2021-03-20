@@ -1,8 +1,7 @@
-#ifndef LF_LIST_H
-#define LF_LIST_H
+#ifndef _STRING_BUFFER_H
+#define _STRING_BUFFER_H
 
-#include <linux/string.h>
-//#include <linux/types.h>
+#include <linux/types.h>
 
 #define TRUE   (1 == 1)
 #define FALSE  (!TRUE)
@@ -63,20 +62,19 @@ int string_buffer_push_back(struct string_buffer* sb, struct substring* tmp) {
     return TRUE;
 }
 
+//TODO return error
 int string_buffer_pop_front(struct string_buffer* sb) {
+    ssize_t t;
     if (!sb->head) { 
         struct substring* tmp = sb->head;
         if (sb->head == sb->tail) {
-            sb->head = NULL;
-            sb->tail = NULL;
-            sb->r_cursor = 0;
+            string_buffer_init(sb);
         } else {
             sb->head = sb->head->next;
+            sb->capacity -= STRING_ENTRY_LEN;
+            sb->f_cursor = 0;
         }
-
-        sb->capacity -= STRING_ENTRY_LEN;
         sb->substring_free(sb->allocator, tmp);
-        sb->f_cursor = 0;
         return TRUE;
     } else {
         return FALSE;
@@ -91,9 +89,9 @@ size_t string_buffer_actual_length(struct string_buffer* sb) {
 typedef int (*copy_to_buffer_callback_t)(char *to, const char *from, size_t count, void* context);
 
 //TODO how to return error ?
-size_t move_string_to_buffer(struct string_buffer* from, 
-                             char* to, size_t count, 
-                             copy_to_buffer_callback_t copy_callback, void* context)
+ssize_t move_string_to_buffer(struct string_buffer* from, 
+                              char* to, size_t count, 
+                              copy_to_buffer_callback_t copy_callback, void* context)
 {
     size_t actual_length = string_buffer_actual_length(from);
     if (actual_length == 0 || count == 0) {
@@ -104,30 +102,31 @@ size_t move_string_to_buffer(struct string_buffer* from,
         count = actual_length;
     }
 
-    size_t result = 0;
+    size_t result = count;
 
-    //todo while
+    while(count) {
+        size_t rest_of_substring = STRING_ENTRY_LEN - from->f_cursor;
+        if (rest_of_substring > count) {
+            rest_of_substring = count;
+        }
 
-    size_t rest_of_substring = STRING_ENTRY_LEN - from->f_cursor;
-    if (rest_of_substring > count) {
-        rest_of_substring = count;
-    }
+        char* current_payload_ptr = from->head->payload + from->f_cursor;
 
-    char* current_payload_ptr = from->head->payload + from->f_cursor;
-    
-    if(copy_callback(to, current_payload_ptr, rest_of_substring, context)) {
-        goto fail_;    
-    }
-    to += rest_of_substring;
-    result += rest_of_substring;
-    count -= rest_of_substring;
-    from->f_cursor += rest_of_substring;
+        if(copy_callback(to, current_payload_ptr, rest_of_substring, context)) {
+            goto fail_;    
+        }
+        to += rest_of_substring;
+        count -= rest_of_substring;
+        from->f_cursor += rest_of_substring;
 
-    if (from->f_cursor + 1 >= STRING_ENTRY_LEN && !string_buffer_pop_front(from)) { // substring
-        goto fail_;
+        if (from->f_cursor + 1 >= STRING_ENTRY_LEN && 
+                !string_buffer_pop_front(from)) {
+            goto fail_;
+        }
     }
 
 fail_:
+    result -= count;
     return result;
  }
 
