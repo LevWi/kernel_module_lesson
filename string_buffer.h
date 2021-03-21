@@ -82,6 +82,7 @@ int string_buffer_pop_front(struct string_buffer* sb) {
 }
 
 size_t string_buffer_actual_length(struct string_buffer* sb) {
+    //Todo error here
     return sb->capacity != 0 ? sb->capacity - sb->r_cursor - sb->f_cursor : 0;
 }
 
@@ -102,7 +103,7 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
         count = actual_length;
     }
 
-    size_t result = count;
+    ssize_t result = count;
 
     while(count) {
         size_t rest_of_substring = STRING_ENTRY_LEN - from->f_cursor;
@@ -126,11 +127,34 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
     }
 
 fail_:
-    result -= count;
+    result -= count; //TODO handling error
     return result;
- }
+}
 
- 
+size_t string_buffer_capacity_available(conts struct string_buffer* sb) {
+    return sb->capacity == 0 ? 0 : sb->r_cursor;
+}
+
+ssize_t string_buffer_append(struct string_buffer* to, 
+                             const char* from, ssize_t count, 
+                             copy_to_buffer_callback_t copy_callback, void* context) 
+{
+    if (count == 0) {
+        return 0;
+    }
+    
+    ssize_t capacity_needed =  count - string_buffer_capacity_available(to);
+    if (capacity_needed > 0) {
+        int push_backs_needed = capacity_needed / STRING_ENTRY_LEN + capacity_needed % STRING_ENTRY_LEN ? 1 : 0;
+        for (size_t i = 0; i < push_backs_needed; i++)
+        {
+            /* code */
+        }
+        
+    } 
+    // Fill to the end of rest
+}
+
 /*
 TODO
 
