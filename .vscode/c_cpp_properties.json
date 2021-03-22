@@ -8,6 +8,7 @@
                 "/usr/src/linux-headers-5.4.0-67/arch/x86/include",
                 "/usr/src/linux-headers-5.4.0-67-generic/arch/x86/include",
                 //"/usr/lib/gcc/x86_64-linux-gnu/9/include/",
+                "/usr/include/x86_64-linux-gnu",  
                 "/usr/src/linux-headers-5.4.0-67-generic/include/"
             ],
             "defines": [],

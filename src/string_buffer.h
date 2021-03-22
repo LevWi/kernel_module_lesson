@@ -1,7 +1,11 @@
 #ifndef _STRING_BUFFER_H
 #define _STRING_BUFFER_H
 
+#ifdef TEST_TYPES
+#include <sys/types.h>
+#else
 #include <linux/types.h>
+#endif
 
 #define TRUE   (1 == 1)
 #define FALSE  (!TRUE)
