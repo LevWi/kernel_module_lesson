@@ -3,15 +3,19 @@
 
 #ifdef TEST_TYPES
 #include <sys/types.h>
+const size_t STRING_ENTRY_LEN = 20;
 #else
 #include <linux/types.h>
+const size_t STRING_ENTRY_LEN = 512;
+#endif
+
+#ifndef NULL
+#define NULL 0
 #endif
 
 #define TRUE   (1 == 1)
 #define FALSE  (!TRUE)
-#define FAIL   (-1)
 
-const size_t STRING_ENTRY_LEN = 512;
 struct substring {
     char payload[STRING_ENTRY_LEN];
     struct substring * next;
@@ -26,15 +30,15 @@ struct string_buffer {
 
     void* allocator;
     struct substring* (*substring_new)(void* allocator);
-    void (*substring_free)(void* allocator, struct substring* ss) {
-}
+    void (*substring_free)(void* allocator, struct substring* ss);
+};
 
 
 void substring_init(struct substring* ss)
 {
     ss->payload[0] = '\0';
     ss->next = NULL;
-};
+}
 
 void string_buffer_init(struct string_buffer* sb) {
     //memset ?
@@ -45,11 +49,12 @@ void string_buffer_init(struct string_buffer* sb) {
     sb->r_cursor = STRING_ENTRY_LEN;
 }
 
-void string_buffer_deinit(struct string_buffer* sb) {
-    //TODO
-}
+//
+//void string_buffer_deinit(struct string_buffer* sb) {
+//    //TODO
+//}
 
-int string_buffer_push_back() {
+int string_buffer_push_back(struct string_buffer* sb) {
     struct substring* tmp = sb->substring_new(sb->allocator);
     if(!tmp) {
         return FALSE;
@@ -70,7 +75,6 @@ int string_buffer_push_back() {
 
 //TODO return error
 int string_buffer_pop_front(struct string_buffer* sb) {
-    ssize_t t;
     if (!sb->head) { 
         struct substring* tmp = sb->head;
         if (sb->head == sb->tail) {
@@ -80,14 +84,15 @@ int string_buffer_pop_front(struct string_buffer* sb) {
             sb->capacity -= STRING_ENTRY_LEN;
             sb->f_cursor = 0;
         }
-        sb->substring_free(sb->allocator, tmp);
+        sb->substring_free(sb->allocator, tmp); //TODO return error ?
         return TRUE;
     } else {
         return FALSE;
     }
 }
 
-size_t string_buffer_actual_length(struct string_buffer* sb) {
+//TODO Error here. Need fix
+size_t string_buffer_length(struct string_buffer* sb) {
     //Todo error here
     return sb->capacity != 0 ? sb->capacity - sb->r_cursor - sb->f_cursor : 0;
 }
@@ -101,7 +106,7 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
                               char* to, ssize_t count, 
                               copy_to_buffer_callback_t copy_callback, void* context)
 {
-    size_t actual_length = string_buffer_actual_length(from);
+    ssize_t actual_length = string_buffer_length(from);
     if (actual_length == 0 || count == 0) {
         return 0;
     }
@@ -111,7 +116,7 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
     }
 
     while(count) {
-        size_t rest_of_substring = STRING_ENTRY_LEN - from->f_cursor;
+        ssize_t rest_of_substring = STRING_ENTRY_LEN - from->f_cursor;
         if (rest_of_substring > count) {
             rest_of_substring = count;
         }
@@ -138,7 +143,7 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
     return count;
 }
 
-size_t string_buffer_capacity_available(conts struct string_buffer* sb) {
+size_t string_buffer_capacity(const struct string_buffer* sb) {
     return sb->capacity == 0 ? 0 : sb->r_cursor;
 }
 
@@ -154,11 +159,11 @@ ssize_t string_buffer_append(struct string_buffer* to,
     
     while(count) {
 
-        ssize_t capacity_available = string_buffer_capacity_available(to);
+        ssize_t capacity_available = string_buffer_capacity(to);
 
         if (count >= capacity_available) {
             if (capacity_available == 0) {
-                if (string_buffer_push_back(to)) {
+                if (!string_buffer_push_back(to)) {
                     //Fail
                     count *= -1;
                     break;
@@ -166,7 +171,7 @@ ssize_t string_buffer_append(struct string_buffer* to,
                 continue; // TODO OR goto?
             }
 
-            char* current_payload_ptr = to->tail->payload + (STRING_ENTRY_LEN - from->r_cursor);
+            char* current_payload_ptr = to->tail->payload + (STRING_ENTRY_LEN - to->r_cursor);
 
             if(copy_callback(current_payload_ptr, from, capacity_available, context)) {
                 //Fail
@@ -176,10 +181,10 @@ ssize_t string_buffer_append(struct string_buffer* to,
 
             count -= capacity_available;
             from += capacity_available;
-            from->r_cursor = 0;
+            to->r_cursor = 0;
         } else {
             //count < capacity_available
-            char* current_payload_ptr = to->tail->payload + (STRING_ENTRY_LEN - from->r_cursor);
+            char* current_payload_ptr = to->tail->payload + (STRING_ENTRY_LEN - to->r_cursor);
 
             if(copy_callback(current_payload_ptr, from, count, context)) {
                 //Fail
@@ -189,7 +194,7 @@ ssize_t string_buffer_append(struct string_buffer* to,
 
             count = 0;
             // Is it needed "from +=" ?
-            from->r_cursor -= count;
+            to->r_cursor -= count;
         }
     }
 
@@ -198,12 +203,7 @@ ssize_t string_buffer_append(struct string_buffer* to,
 
 /*
 TODO
-
 validate_string_buffer
-
-trim_front(len)
-append_string(const char*, len)
-
 */
 
 #undef TRUE
