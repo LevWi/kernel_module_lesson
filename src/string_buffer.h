@@ -85,6 +85,10 @@ int string_buffer_push_back(struct string_buffer* sb) {
     return TRUE;
 }
 
+int is_fail(int result) {
+    return result == SB_FAIL;
+}
+
 int string_buffer_pop_front(struct string_buffer* sb) {
     if (sb->head) {
         struct substring* tmp = sb->head;
@@ -128,7 +132,7 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
 {
     ssize_t actual_length = string_buffer_length(from);
     if (actual_length == 0 || count == 0) {
-        return 0;
+        return count;
     }
 
     if (count > actual_length) {
@@ -152,8 +156,7 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
         count -= rest_of_substring;
         from->f_cursor += rest_of_substring;
 
-        if (from->f_cursor + 1 >= STRING_ENTRY_LEN && 
-                !string_buffer_pop_front(from)) {
+        if (from->f_cursor + 1 >= STRING_ENTRY_LEN && is_fail(string_buffer_pop_front(from))) {
             //Fail
             count *= -1;
             break;

@@ -88,6 +88,52 @@ TEST(StringBuffer, AppendBigData) {
     EXPECT_EQ(0, g_allocations_counter);
 }
 
+TEST(StringBuffer, ReadData) {
+    std::string input = "qwertyuiopasdfghjkl0123456789qwertyuiop0123456789";
+    char char_buffer[32] = { '\0' };
+
+
+    string_buffer buffer;
+    setAllocator( buffer );
+
+    string_buffer_init(&buffer);
+
+    EXPECT_EQ(0, string_buffer_capacity_available(&buffer));
+
+
+    auto result = move_string_to_buffer(&buffer, char_buffer, 10, simple_copy_to_buffer_callback, nullptr);
+
+    EXPECT_EQ(10, result);
+
+    result = string_buffer_append(&buffer, input.c_str(), input.size(), simple_copy_to_buffer_callback, nullptr);
+
+    EXPECT_EQ(0, result);
+
+    std::string output;
+    const int part = 9;
+    for (int i = 0; i < 40; i+=part) {
+        result = move_string_to_buffer(&buffer, char_buffer, part, simple_copy_to_buffer_callback, nullptr);
+        EXPECT_GE(0, result);
+        if (result < 0) {
+            break;
+        }
+        output.append(char_buffer, part - result);
+    }
+
+    EXPECT_EQ(input, output);
+    EXPECT_EQ(0, buffer.capacity);
+    EXPECT_EQ(0, string_buffer_capacity_available(&buffer));
+    EXPECT_EQ(0, string_buffer_length(&buffer));
+
+    string_buffer_clear(&buffer);
+    EXPECT_EQ(0, buffer.capacity);
+    EXPECT_EQ(0, string_buffer_capacity_available(&buffer));
+    EXPECT_EQ(STRING_ENTRY_LEN, buffer.r_cursor);
+    EXPECT_EQ(buffer.head, buffer.tail);
+    EXPECT_EQ(buffer.head, nullptr);
+    EXPECT_EQ(0, g_allocations_counter);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
