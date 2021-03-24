@@ -13,8 +13,9 @@ const size_t STRING_ENTRY_LEN = 512;
 #define NULL 0
 #endif
 
-#define TRUE   (1 == 1)
-#define FALSE  (!TRUE)
+#define TRUE     (1)
+#define FALSE    (0)
+#define SB_FAIL  (-1)
 
 struct substring {
     char payload[STRING_ENTRY_LEN];
@@ -30,7 +31,7 @@ struct string_buffer {
 
     void* allocator;
     struct substring* (*substring_new)(void* allocator);
-    void (*substring_free)(void* allocator, struct substring* ss);
+    int (*substring_free)(void* allocator, struct substring* ss);
 };
 
 
@@ -48,15 +49,6 @@ void string_buffer_init(struct string_buffer* sb) {
     sb->f_cursor = 0;
     sb->r_cursor = STRING_ENTRY_LEN;
 }
-
-//
-//void string_buffer_deinit(struct string_buffer* sb) {
-//    //TODO
-//}
-
-//int string_buffer_clear(struct string_buffer* sb) {
-//  todo
-//}
 
 /*
 TODO
@@ -93,9 +85,8 @@ int string_buffer_push_back(struct string_buffer* sb) {
     return TRUE;
 }
 
-//TODO return error
 int string_buffer_pop_front(struct string_buffer* sb) {
-    if (!sb->head) { 
+    if (sb->head) {
         struct substring* tmp = sb->head;
         if (sb->head == sb->tail) {
             string_buffer_init(sb);
@@ -104,11 +95,26 @@ int string_buffer_pop_front(struct string_buffer* sb) {
             sb->capacity -= STRING_ENTRY_LEN;
             sb->f_cursor = 0;
         }
-        sb->substring_free(sb->allocator, tmp); //TODO return error ?
+
+        if ( !sb->substring_free(sb->allocator, tmp) ) {
+            return SB_FAIL;
+        }
         return TRUE;
     } else {
         return FALSE;
     }
+}
+
+int string_buffer_clear(struct string_buffer* sb) {
+    if (!sb->head) {
+        return TRUE;
+    }
+
+    int pop_result = string_buffer_pop_front(sb);
+    while( pop_result > 0 ) {
+        pop_result = string_buffer_pop_front(sb);
+    }
+    return pop_result;
 }
 
 // Return zero for success
@@ -202,9 +208,8 @@ ssize_t string_buffer_append(struct string_buffer* to,
                 break;    
             }
 
-            count = 0;
-            // Is it needed "from +=" ?
             to->r_cursor -= count;
+            count = 0;
         }
     }
     return count;
