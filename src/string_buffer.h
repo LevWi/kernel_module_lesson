@@ -42,7 +42,6 @@ void substring_init(struct substring* ss)
 }
 
 void string_buffer_init(struct string_buffer* sb) {
-    //memset ?
     sb->head = NULL;
     sb->tail = NULL;
     sb->capacity = 0;
@@ -50,18 +49,11 @@ void string_buffer_init(struct string_buffer* sb) {
     sb->r_cursor = STRING_ENTRY_LEN;
 }
 
-/*
-TODO
-validate_string_buffer
-*/
-
 size_t string_buffer_capacity_available(const struct string_buffer* sb) {
     return sb->capacity == 0 ? 0 : sb->r_cursor;
 }
 
-//TODO Error here. Need fix
 size_t string_buffer_length(struct string_buffer* sb) {
-    //Todo error here
     return sb->capacity != 0 ? sb->capacity - sb->r_cursor - sb->f_cursor : 0;
 }
 
@@ -114,10 +106,10 @@ int string_buffer_clear(struct string_buffer* sb) {
         return TRUE;
     }
 
-    int pop_result = string_buffer_pop_front(sb);
-    while( pop_result > 0 ) {
-        pop_result = string_buffer_pop_front(sb);
-    }
+    int pop_result = 0;
+    while( (pop_result = string_buffer_pop_front(sb)) > 0 )
+        ;
+
     return pop_result;
 }
 
@@ -126,7 +118,7 @@ typedef int (*copy_to_buffer_callback_t)(char *to, const char *from, size_t coun
 
 // return value of not readed byte;
 // Negative if - error
-ssize_t move_string_to_buffer(struct string_buffer* from, 
+ssize_t string_buffer_extract(struct string_buffer* from,
                               char* to, ssize_t count, 
                               copy_to_buffer_callback_t copy_callback, void* context)
 {
@@ -134,6 +126,8 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
     if (actual_length == 0 || count == 0) {
         return count;
     }
+
+    ssize_t result = count;
 
     if (count > actual_length) {
         count = actual_length;
@@ -149,21 +143,27 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
 
         if(copy_callback(to, current_payload_ptr, rest_of_substring, context)) {
             //Fail
-            count *= -1; 
+            result *= -1;
             break;    
         }
         to += rest_of_substring;
         count -= rest_of_substring;
+        result -= rest_of_substring;
         from->f_cursor += rest_of_substring;
 
         if (from->f_cursor + 1 >= STRING_ENTRY_LEN && is_fail(string_buffer_pop_front(from))) {
             //Fail
-            count *= -1;
+            result *= -1;
             break;
         }
     }
 
-    return count;
+    if (string_buffer_length(from) == 0) {
+        from->f_cursor = 0;
+        from->r_cursor = STRING_ENTRY_LEN;
+    }
+
+    return result;
 }
 
 // return value of not writed byte;

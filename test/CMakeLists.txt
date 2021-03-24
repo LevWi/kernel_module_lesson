@@ -4,6 +4,8 @@ set(project_name string_buffer_test)
 
 project(${project_name})
 
+add_compile_options(-std=c++17)
+
 # Locate GTest
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
