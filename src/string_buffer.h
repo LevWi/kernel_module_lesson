@@ -54,6 +54,26 @@ void string_buffer_init(struct string_buffer* sb) {
 //    //TODO
 //}
 
+//int string_buffer_clear(struct string_buffer* sb) {
+//  todo
+//}
+
+/*
+TODO
+validate_string_buffer
+*/
+
+size_t string_buffer_capacity_available(const struct string_buffer* sb) {
+    return sb->capacity == 0 ? 0 : sb->r_cursor;
+}
+
+//TODO Error here. Need fix
+size_t string_buffer_length(struct string_buffer* sb) {
+    //Todo error here
+    return sb->capacity != 0 ? sb->capacity - sb->r_cursor - sb->f_cursor : 0;
+}
+
+
 int string_buffer_push_back(struct string_buffer* sb) {
     struct substring* tmp = sb->substring_new(sb->allocator);
     if(!tmp) {
@@ -89,12 +109,6 @@ int string_buffer_pop_front(struct string_buffer* sb) {
     } else {
         return FALSE;
     }
-}
-
-//TODO Error here. Need fix
-size_t string_buffer_length(struct string_buffer* sb) {
-    //Todo error here
-    return sb->capacity != 0 ? sb->capacity - sb->r_cursor - sb->f_cursor : 0;
 }
 
 // Return zero for success
@@ -143,10 +157,6 @@ ssize_t move_string_to_buffer(struct string_buffer* from,
     return count;
 }
 
-size_t string_buffer_capacity(const struct string_buffer* sb) {
-    return sb->capacity == 0 ? 0 : sb->r_cursor;
-}
-
 // return value of not writed byte;
 // Negative if - system error
 ssize_t string_buffer_append(struct string_buffer* to, 
@@ -159,7 +169,7 @@ ssize_t string_buffer_append(struct string_buffer* to,
     
     while(count) {
 
-        ssize_t capacity_available = string_buffer_capacity(to);
+        ssize_t capacity_available = string_buffer_capacity_available(to);
 
         if (count >= capacity_available) {
             if (capacity_available == 0) {
@@ -197,14 +207,8 @@ ssize_t string_buffer_append(struct string_buffer* to,
             to->r_cursor -= count;
         }
     }
-
     return count;
 }
-
-/*
-TODO
-validate_string_buffer
-*/
 
 #undef TRUE
 #undef FALSE
