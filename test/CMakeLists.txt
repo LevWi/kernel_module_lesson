@@ -14,7 +14,6 @@ add_definitions("-D TEST_TYPES")
 	
 #include_directories(.)
 add_executable(${project_name}
-    #Todo
     ../src/string_buffer.h
     test.cpp
     )
