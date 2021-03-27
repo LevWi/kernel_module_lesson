@@ -92,9 +92,7 @@ int string_buffer_pop_front(struct string_buffer* sb) {
             sb->f_cursor = 0;
         }
 
-        if ( !sb->substring_free(sb->allocator, tmp) ) {
-            return SB_FAIL;
-        }
+        sb->substring_free(sb->allocator, tmp)
         return TRUE;
     } else {
         return FALSE;
@@ -107,7 +105,7 @@ int string_buffer_clear(struct string_buffer* sb) {
     }
 
     int pop_result = 0;
-    while( (pop_result = string_buffer_pop_front(sb)) > 0 )
+    while( pop_result = string_buffer_pop_front(sb) )
         ;
 
     return pop_result;
@@ -151,10 +149,8 @@ ssize_t string_buffer_extract(struct string_buffer* from,
         result -= rest_of_substring;
         from->f_cursor += rest_of_substring;
 
-        if (from->f_cursor + 1 >= STRING_ENTRY_LEN && is_fail(string_buffer_pop_front(from))) {
-            //Fail
-            result *= -1;
-            break;
+        if (from->f_cursor + 1 >= STRING_ENTRY_LEN) {
+            string_buffer_pop_front(from);
         }
     }
 

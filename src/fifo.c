@@ -7,7 +7,6 @@
 #include "string_buffer.h"
 
 #define  DEVICE_NAME "fifo"
-#define  CACHE_NAME "str_buffer"
 
 static int g_major_number;
 static struct cdev g_cdev;
@@ -32,6 +31,12 @@ static struct file_operations g_fops =
    .release = dev_release,
 };
 
+static struct substring* substring_slab_alloc(void* allocator) {
+   return kmem_cache_alloc(&g_cache, GFP_KERNEL);
+}
+
+substring_slab_free()
+
 static int __init fifo_init(void) {
 
    g_cache = KMEM_CACHE(substring, 0);
@@ -40,6 +45,7 @@ static int __init fifo_init(void) {
    }
 
    string_buffer_init(&g_string_buffer);
+   
    //TODO init destructor / constructor
 
    int ret = alloc_chrdev_region(&g_dev_num, 0, 1, DEVICE_NAME);
@@ -69,7 +75,7 @@ static int __init fifo_init(void) {
 }
 
 static void __exit fifo_exit(void){
-   cdev_del(g_cdev); /*removing the structure that we added previously*/
+   cdev_del(&g_cdev); /*removing the structure that we added previously*/
    printk(KERN_INFO " FIFODev : removed the cdev from kernel\n");
 
    unregister_chrdev_region(g_dev_num, 1);
