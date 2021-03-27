@@ -31,7 +31,7 @@ struct string_buffer {
 
     void* allocator;
     struct substring* (*substring_new)(void* allocator);
-    int (*substring_free)(void* allocator, struct substring* ss);
+    void (*substring_free)(void* allocator, struct substring* ss);
 };
 
 
@@ -99,16 +99,16 @@ int string_buffer_pop_front(struct string_buffer* sb) {
     }
 }
 
-int string_buffer_clear(struct string_buffer* sb) {
+void string_buffer_clear(struct string_buffer* sb) {
     if (!sb->head) {
-        return TRUE;
+        return;
     }
 
     int pop_result = 0;
     while( pop_result = string_buffer_pop_front(sb) )
         ;
 
-    return pop_result;
+    return;
 }
 
 // Return zero for success

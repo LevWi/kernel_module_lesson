@@ -3,6 +3,7 @@
 #include <linux/fs.h>
 #include <linux/cdev.h>
 #include <linux/slab.h>
+#include <linux/uaccess.h>
 
 #include "string_buffer.h"
 
@@ -32,10 +33,21 @@ static struct file_operations g_fops =
 };
 
 static struct substring* substring_slab_alloc(void* allocator) {
-   return kmem_cache_alloc(&g_cache, GFP_KERNEL);
+   struct substring* tmp = (struct substring*)kmem_cache_alloc(&g_cache, GFP_KERNEL);
+   if (tmp) {
+      printk(KERN_INFO " FIFODev : [OK] substring_slab_alloc\n");
+      substring_init(tmp);
+   } else {
+      printk(KERN_WARNING " FIFODev : [NOK] substring_slab_alloc\n");
+   }
+   return tmp;
 }
 
-substring_slab_free()
+static void substring_slab_free(void* allocator, struct substring* ss) {
+   printk(KERN_INFO " FIFODev : substring_slab_free\n");
+   kmem_cache_free(g_cache, ss);
+   return;
+}
 
 static int __init fifo_init(void) {
 
@@ -45,6 +57,8 @@ static int __init fifo_init(void) {
    }
 
    string_buffer_init(&g_string_buffer);
+   g_string_buffer.substring_new = substring_slab_alloc;
+   g_string_buffer.substring_free = substring_slab_free;
    
    //TODO init destructor / constructor
 
@@ -65,10 +79,10 @@ static int __init fifo_init(void) {
 
    ret = cdev_add(g_cdev, g_dev_num, 1);
    if (ret < 0) {
-           printk(KERN_ERR "FIFODev : device adding to the kernel failed\n");
-           return ret;
+      printk(KERN_ERR "FIFODev : device adding to the kernel failed\n");
+      return ret;
    } else {
-           printk(KERN_INFO "FIFODev : device addition to the kernel successful\n");
+      printk(KERN_INFO "FIFODev : device addition to the kernel successful\n");
    }
 
    return 0;
@@ -79,26 +93,53 @@ static void __exit fifo_exit(void){
    printk(KERN_INFO " FIFODev : removed the cdev from kernel\n");
 
    unregister_chrdev_region(g_dev_num, 1);
+
+   // TODO is locking needed here?
+   mutex_lock(&g_buffer_mtx);
+   string_buffer_clear(&g_string_buffer);
+   mutex_unlock(&g_buffer_mtx);
+
+   kmem_cache_destroy(&g_cache);
+
    printk(KERN_INFO  " FIFODev : unregistered the device numbers\n");
    printk(KERN_ALERT " FIFODev : character driver is exiting\n");
 }
 
 static int dev_open(struct inode *inodep, struct file *filep){
-
+   printk(KERN_INFO  " FIFODev : open\n");
    return 0;
 }
 
+static int dev_release(struct inode *inodep, struct file *filep){
+   printk(KERN_INFO  " FIFODev : release\n");
+   return 0;
+}
+
+// Return zero for success
+static int copy_to_user_callback(char *to, const char *from, size_t count, void* context) {
+   return copy_to_user(to, from, count);
+}
+
+
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset){
-   return -EFAULT;
+   printk(KERN_INFO  " FIFODev : read\n");
+
+   mutex_lock(&g_buffer_mtx);
+
+   ssize_t result = string_buffer_extract(&g_string_buffer, buffer, len, copy_to_user_callback);
+   //TODO *f_pos += count; is it needed?
+
+   mutex_unlock(&g_buffer_mtx);
+   return result < 0 ? -EFAULT : ((ssize_t)len - result);
 }
 
 
 static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
-   return len;
-}
+   printk(KERN_INFO  " FIFODev : write\n");
 
-static int dev_release(struct inode *inodep, struct file *filep){
-   return 0;
+   mutex_lock(&g_buffer_mtx);
+   mutex_unlock(&g_buffer_mtx);
+   return len;
 }
 
 MODULE_LICENSE("GPL");
