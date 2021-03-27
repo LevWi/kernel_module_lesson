@@ -2,15 +2,22 @@
 #include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/cdev.h>
+#include <linux/slab.h>
 
 #include "string_buffer.h"
 
 #define  DEVICE_NAME "fifo"
+#define  CACHE_NAME "str_buffer"
 
 static int g_major_number;
-struct cdev g_cdev;
-dev_t g_dev_num;
-//TODO +mutex  +slab_cache +string_buffer
+static struct cdev g_cdev;
+static dev_t g_dev_num;
+
+
+DEFINE_MUTEX(g_buffer_mtx);
+static struct string_buffer g_string_buffer;
+static struct kmem_cache_t * g_cache;
+//TODO +slab_cache +string_buffer
 
 static int     dev_open(struct inode *, struct file *);
 static int     dev_release(struct inode *, struct file *);
@@ -25,7 +32,15 @@ static struct file_operations g_fops =
    .release = dev_release,
 };
 
-static int __init fifo_init(void){
+static int __init fifo_init(void) {
+
+   g_cache = KMEM_CACHE(substring, 0);
+   if (!g_cache) {
+      return -ENOMEM;
+   }
+
+   string_buffer_init(&g_string_buffer);
+   //TODO init destructor / constructor
 
    int ret = alloc_chrdev_region(&g_dev_num, 0, 1, DEVICE_NAME);
    if (ret < 0) {

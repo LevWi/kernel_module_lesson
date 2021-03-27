@@ -166,7 +166,7 @@ ssize_t string_buffer_extract(struct string_buffer* from,
     return result;
 }
 
-// return value of not writed byte;
+// return value of unrecorded bytes;
 // Negative if - system error
 ssize_t string_buffer_append(struct string_buffer* to, 
                              const char* from, ssize_t count, 
