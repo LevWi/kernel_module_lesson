@@ -92,7 +92,7 @@ int string_buffer_pop_front(struct string_buffer* sb) {
             sb->f_cursor = 0;
         }
 
-        sb->substring_free(sb->allocator, tmp)
+        sb->substring_free(sb->allocator, tmp);
         return TRUE;
     } else {
         return FALSE;

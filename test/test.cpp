@@ -22,7 +22,7 @@ void setAllocator(string_buffer& buffer ) {
     buffer.substring_free = [](void*, substring* ss){
         g_allocations_counter--;
         delete ss;
-        return 1; };
+        return; };
 }
  
 TEST(StringBuffer, Append) {
