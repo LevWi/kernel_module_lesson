@@ -17,7 +17,6 @@ static dev_t g_dev_num;
 DEFINE_MUTEX(g_buffer_mtx);
 static struct string_buffer g_string_buffer;
 static struct kmem_cache_t * g_cache;
-//TODO +slab_cache +string_buffer
 
 static int     dev_open(struct inode *, struct file *);
 static int     dev_release(struct inode *, struct file *);
@@ -35,7 +34,7 @@ static struct file_operations g_fops =
 static struct substring* substring_slab_alloc(void* allocator) {
    struct substring* tmp = (struct substring*)kmem_cache_alloc(&g_cache, GFP_KERNEL);
    if (tmp) {
-      printk(KERN_INFO " FIFODev : [OK] substring_slab_alloc\n");
+      printk(KERN_DEBUG " FIFODev : [OK] substring_slab_alloc\n");
       substring_init(tmp);
    } else {
       printk(KERN_WARNING " FIFODev : [NOK] substring_slab_alloc\n");
@@ -44,7 +43,7 @@ static struct substring* substring_slab_alloc(void* allocator) {
 }
 
 static void substring_slab_free(void* allocator, struct substring* ss) {
-   printk(KERN_INFO " FIFODev : substring_slab_free\n");
+   printk(KERN_DEBUG " FIFODev : substring_slab_free\n");
    kmem_cache_free(g_cache, ss);
    return;
 }
@@ -59,7 +58,7 @@ static int __init fifo_init(void) {
    string_buffer_init(&g_string_buffer);
    g_string_buffer.substring_new = substring_slab_alloc;
    g_string_buffer.substring_free = substring_slab_free;
-   
+
    //TODO init destructor / constructor
 
    int ret = alloc_chrdev_region(&g_dev_num, 0, 1, DEVICE_NAME);
@@ -89,7 +88,7 @@ static int __init fifo_init(void) {
 }
 
 static void __exit fifo_exit(void){
-   cdev_del(&g_cdev); /*removing the structure that we added previously*/
+   cdev_del(&g_cdev);
    printk(KERN_INFO " FIFODev : removed the cdev from kernel\n");
 
    unregister_chrdev_region(g_dev_num, 1);
@@ -120,6 +119,11 @@ static int copy_to_user_callback(char *to, const char *from, size_t count, void*
    return copy_to_user(to, from, count);
 }
 
+// Return zero for success
+static int copy_from_user_callback(char *to, const char *from, size_t count, void* context) {
+   return copy_from_user(to, from, count);
+}
+
 
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset){
    printk(KERN_INFO  " FIFODev : read\n");
@@ -138,8 +142,12 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
    printk(KERN_INFO  " FIFODev : write\n");
 
    mutex_lock(&g_buffer_mtx);
+
+   ssize_t result = string_buffer_append(&g_string_buffer, buffer, len, copy_from_user_callback);
+   //TODO *f_pos += count; is it needed?
+
    mutex_unlock(&g_buffer_mtx);
-   return len;
+   return result < 0 ? -EFAULT : ((ssize_t)len - result);
 }
 
 MODULE_LICENSE("GPL");
