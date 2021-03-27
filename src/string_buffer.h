@@ -3,10 +3,10 @@
 
 #ifdef TEST_TYPES
 #include <sys/types.h>
-const size_t STRING_ENTRY_LEN = 20;
+#define STRING_ENTRY_LEN 20
 #else
 #include <linux/types.h>
-const size_t STRING_ENTRY_LEN = 512;
+#define STRING_ENTRY_LEN 512
 #endif
 
 #ifndef NULL
@@ -117,7 +117,7 @@ typedef int (*copy_to_buffer_callback_t)(char *to, const char *from, size_t coun
 // return value of not readed byte;
 // Negative if - error
 ssize_t string_buffer_extract(struct string_buffer* from,
-                              char* to, ssize_t count, 
+                              char* to, ssize_t count,
                               copy_to_buffer_callback_t copy_callback, void* context)
 {
     ssize_t actual_length = string_buffer_length(from);
@@ -142,7 +142,7 @@ ssize_t string_buffer_extract(struct string_buffer* from,
         if(copy_callback(to, current_payload_ptr, rest_of_substring, context)) {
             //Fail
             result *= -1;
-            break;    
+            break;
         }
         to += rest_of_substring;
         count -= rest_of_substring;
@@ -164,14 +164,14 @@ ssize_t string_buffer_extract(struct string_buffer* from,
 
 // return value of unrecorded bytes;
 // Negative if - system error
-ssize_t string_buffer_append(struct string_buffer* to, 
-                             const char* from, ssize_t count, 
-                             copy_to_buffer_callback_t copy_callback, void* context) 
+ssize_t string_buffer_append(struct string_buffer* to,
+                             const char* from, ssize_t count,
+                             copy_to_buffer_callback_t copy_callback, void* context)
 {
     if (count == 0) {
         return 0;
     }
-    
+
     while(count) {
 
         ssize_t capacity_available = string_buffer_capacity_available(to);
@@ -204,7 +204,7 @@ ssize_t string_buffer_append(struct string_buffer* to,
             if(copy_callback(current_payload_ptr, from, count, context)) {
                 //Fail
                 count *= -1;
-                break;    
+                break;
             }
 
             to->r_cursor -= count;
@@ -217,4 +217,4 @@ ssize_t string_buffer_append(struct string_buffer* to,
 #undef TRUE
 #undef FALSE
 
-#endif 
+#endif

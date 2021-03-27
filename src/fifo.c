@@ -16,7 +16,7 @@ static dev_t g_dev_num;
 
 DEFINE_MUTEX(g_buffer_mtx);
 static struct string_buffer g_string_buffer;
-static struct kmem_cache_t * g_cache;
+static struct kmem_cache * g_cache;
 
 static int     dev_open(struct inode *, struct file *);
 static int     dev_release(struct inode *, struct file *);
@@ -32,7 +32,7 @@ static struct file_operations g_fops =
 };
 
 static struct substring* substring_slab_alloc(void* allocator) {
-   struct substring* tmp = (struct substring*)kmem_cache_alloc(&g_cache, GFP_KERNEL);
+   struct substring* tmp = (struct substring*)kmem_cache_alloc(g_cache, GFP_KERNEL);
    if (tmp) {
       printk(KERN_DEBUG " FIFODev : [OK] substring_slab_alloc\n");
       substring_init(tmp);
@@ -59,8 +59,6 @@ static int __init fifo_init(void) {
    g_string_buffer.substring_new = substring_slab_alloc;
    g_string_buffer.substring_free = substring_slab_free;
 
-   //TODO init destructor / constructor
-
    int ret = alloc_chrdev_region(&g_dev_num, 0, 1, DEVICE_NAME);
    if (ret < 0) {
       printk(KERN_ERR " FIFODev : alloc_chrdev_region failed\n");
@@ -73,10 +71,10 @@ static int __init fifo_init(void) {
    printk(KERN_INFO "FIFODev : major number of our device is %d\n", g_major_number);
    printk(KERN_INFO "FIFODev : to use mknod /dev/%s c %d 0\n", DEVICE_NAME, g_major_number);
 
-   cdev_init(&g_cdev, g_fops);
-   g_cdev.owner = THIS_MODULE
+   cdev_init(&g_cdev, &g_fops);
+   g_cdev.owner = THIS_MODULE;
 
-   ret = cdev_add(g_cdev, g_dev_num, 1);
+   ret = cdev_add(&g_cdev, g_dev_num, 1);
    if (ret < 0) {
       printk(KERN_ERR "FIFODev : device adding to the kernel failed\n");
       return ret;
@@ -98,7 +96,7 @@ static void __exit fifo_exit(void){
    string_buffer_clear(&g_string_buffer);
    mutex_unlock(&g_buffer_mtx);
 
-   kmem_cache_destroy(&g_cache);
+   kmem_cache_destroy(g_cache);
 
    printk(KERN_INFO  " FIFODev : unregistered the device numbers\n");
    printk(KERN_ALERT " FIFODev : character driver is exiting\n");
@@ -130,7 +128,7 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 
    mutex_lock(&g_buffer_mtx);
 
-   ssize_t result = string_buffer_extract(&g_string_buffer, buffer, len, copy_to_user_callback);
+   ssize_t result = string_buffer_extract(&g_string_buffer, buffer, len, copy_to_user_callback, NULL);
    //TODO *f_pos += count; is it needed?
 
    mutex_unlock(&g_buffer_mtx);
@@ -143,7 +141,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
    mutex_lock(&g_buffer_mtx);
 
-   ssize_t result = string_buffer_append(&g_string_buffer, buffer, len, copy_from_user_callback);
+   ssize_t result = string_buffer_append(&g_string_buffer, buffer, len, copy_from_user_callback, NULL);
    //TODO *f_pos += count; is it needed?
 
    mutex_unlock(&g_buffer_mtx);
