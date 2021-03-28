@@ -17,6 +17,12 @@ std::vector<std::string_view> split(const std::string_view s, const std::string_
         out.push_back(s.substr(pos, posEnd - pos));
         pos = delimiter.length() + posEnd;
     }
+
+    if (pos != 0 ) {
+        auto tmp = s.substr(pos);
+        if (tmp.size() != 0)
+            out.push_back(std::move(tmp));
+    }
     return out;
 }
 
@@ -51,7 +57,7 @@ TEST(FIFO_DEVICE, ReadWrite) {
     "he without altering his tone, beneath the politeness and affected sympathy of which "      \
     "indifference and even irony could be discerned.",
 
-     "small test string4",
+    "small test string4",
     };
 
     struct FDWrapper {
