@@ -71,19 +71,19 @@ TEST(FIFO_DEVICE, ReadWrite) {
 
     const std::string device_path = "/dev/fifo";
 
-    FDWrapper dev { open(device_path.c_str(), O_RDONLY) };
-    ASSERT_GE(0, dev.fd);
-
     FDWrapper dev2 { open(device_path.c_str(), O_WRONLY) };
-    ASSERT_GE(0, dev2.fd);
+    ASSERT_LE(0, dev2.fd);
+
+    FDWrapper dev { open(device_path.c_str(), O_RDONLY) };
+    ASSERT_LE(0, dev.fd);
 
     std::cout << "Writing started\n";
 
     for (const std::string_view el : test_strings) {
         auto writed_result = write(dev2.fd, el.data(), el.size());
-        ASSERT_GE(0, writed_result);
+        ASSERT_LE(0, writed_result);
         writed_result = write(dev2.fd, delimiter.data(), delimiter.size());
-        ASSERT_GE(0, writed_result);
+        ASSERT_LE(0, writed_result);
     }
 
     std::cout << "Reading started\n";
@@ -93,7 +93,7 @@ TEST(FIFO_DEVICE, ReadWrite) {
     ssize_t readed_result = 0;
     do {
         readed_result = read(dev.fd, tmp_buff, sizeof (tmp_buff));
-        ASSERT_GE(0, readed_result);
+        ASSERT_LE(0, readed_result);
         input_buffer.append(tmp_buff, readed_result);
     } while (readed_result == sizeof (tmp_buff) );
 
