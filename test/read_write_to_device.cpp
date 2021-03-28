@@ -8,6 +8,18 @@
 
 #include <iostream>
 
+std::vector<std::string_view> split(const std::string_view s, const std::string_view delimiter) {
+    std::vector<std::string_view> out;
+
+    size_t pos = 0;
+    size_t posEnd = 0;
+    while ((posEnd = s.find(delimiter, pos)) != std::string::npos) {
+        out.push_back(s.substr(pos, posEnd - pos));
+        pos = delimiter.length() + posEnd;
+    }
+    return out;
+}
+
 TEST(FIFO_DEVICE, ReadWrite) {
     const std::string_view delimiter = "==== END ====";
     std::unordered_set<std::string_view> test_strings =
@@ -79,7 +91,15 @@ TEST(FIFO_DEVICE, ReadWrite) {
         input_buffer.append(tmp_buff, readed_result);
     } while (readed_result == sizeof (tmp_buff) );
 
+    std::cout << "Checking...\n";
 
+    auto readed_strings = split(input_buffer, delimiter);
+
+    EXPECT_EQ(readed_strings.size(), test_strings.size());
+
+    for (const std::string_view el : readed_strings) {
+        EXPECT_TRUE(test_strings.find(el) != test_strings.end());
+    }
 }
 
 int main(int argc, char **argv) {
