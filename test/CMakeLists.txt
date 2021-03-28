@@ -18,4 +18,11 @@ add_executable(${project_name}
     test.cpp
     )
 
+#include_directories(.)
+add_executable(read_write_to_device
+    read_write_to_device.cpp
+    )
+
+target_link_libraries(read_write_to_device PRIVATE gtest pthread)
+
 target_link_libraries(${project_name} PRIVATE gtest pthread)
