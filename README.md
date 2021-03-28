@@ -1,7 +1,7 @@
 # kernel_module_lesson
 
 Installation LKM:
-
+```
 $ sudo insmod /path/to/fifo.ko
 $ dmesg
 ...
@@ -12,9 +12,9 @@ $ dmesg
 
 $ sudo mknod /dev/fifo c 238 0
 $ sudo chmod a+rw /dev/fifo
-
+```
 Test:
-
+```
 $ echo "TEST1" > /dev/fifo
 $ echo "TEST2" > /dev/fifo
 $ echo "TEST3" > /dev/fifo
@@ -22,10 +22,10 @@ $ cat /dev/fifo
 TEST1
 TEST2
 TEST3
-
+```
 
 Remove LKM from system:
-
+```
 $ sudo rmmod fifo.ko
-
+```
 
