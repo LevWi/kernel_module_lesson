@@ -50,7 +50,7 @@ static void substring_slab_free(void* allocator, struct substring* ss) {
 
 static int __init fifo_init(void) {
 
-   g_cache = KMEM_CACHE(substring, 0);
+   g_cache = KMEM_CACHE_USERCOPY(substring, 0, payload);
    if (!g_cache) {
       return -ENOMEM;
    }
