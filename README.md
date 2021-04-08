@@ -1,4 +1,6 @@
-# kernel_module_lesson
+# Fifo charter device example
+
+It is simple fifo buffer for byte data
 
 Installation LKM:
 ```
